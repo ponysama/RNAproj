@@ -1,0 +1,1431 @@
+import os,sys,getopt,re,random,itertools
+from copy import deepcopy
+###############################################################################
+sys.path += ";C:\\Users\\zy\\Downloads\\DendroPy-3.12.0\\dendropy"
+import dendropy
+#kengdie
+
+alphabet = ['A','U','C','G']
+
+bpAlphabet = ['AA', 'AU', 'AC', 'AG', 'UA', 'UU', 'UC', 'UG', 'CA', 'CU', 'CC', 'CG', 'GA', 'GU', 'GC', 'GG']
+
+costMat = {'AA':0,'CC':0,'GG':0,'UU':0,'AG':1,'AC':2,'AU':2,'CG':2,'CU':1,'GU':2}
+
+basepair = [('A','U'),('U','A'),('U','G'),('C','G'),('G','C'),('G','U')]
+bplist  = ['AU','UA','UG','GU','CG','GC']
+
+ISO = {(('A','C'), ('C','A')):4.93,
+        (('G','C'), ('A','G')):3.5,
+        (('G','C'), ('G','C')):0.0,
+        (('U','G'), ('U','G')):0.0,
+        (('A','C'), ('G','U')):0.8,
+        (('A','G'), ('U','U')):8.18,
+        (('G','A'), ('A','G')):2.25,
+        (('A','A'), ('A','C')):4.58,
+        (('A','C'), ('U','G')):4.76,
+        (('U','G'), ('C','G')):2.14,
+        (('U','G'), ('G','G')):10.0,
+        (('U','C'), ('U','U')):4.36,
+        (('G','G'), ('U','A')):10.0,
+        (('C','G'), ('G','C')):0.26,
+        (('A','U'), ('C','A')):2.75,
+        (('A','U'), ('U','U')):3.8,
+        (('U','U'), ('G','C')):3.94,
+        (('U','G'), ('G','C')):2.39,
+        (('C','A'), ('C','A')):0.0,
+        (('G','A'), ('U','G')):3.8,
+        (('A','G'), ('G','C')):4.38,
+        (('A','A'), ('C','G')):3.44,
+        (('G','G'), ('C','U')):10.0,
+        (('G','C'), ('U','A')):0.34,
+        (('U','A'), ('A','A')):4.66,
+        (('U','U'), ('U','C')):6.46,
+        (('U','U'), ('C','G')):3.8,
+        (('C','C'), ('U','C')):8.25,
+        (('G','A'), ('C','U')):0.0,
+        (('C','U'), ('G','U')):5.06,
+        (('C','G'), ('U','C')):3.44,
+        (('U','C'), ('G','U')):2.89,
+        (('U','U'), ('U','G')):2.89,
+        (('G','A'), ('U','U')):5.97,
+        (('G','U'), ('A','G')):4.44,
+        (('A','C'), ('G','A')):5.05,
+        (('G','C'), ('U','G')):2.39,
+        (('G','G'), ('A','A')):10.0,
+        (('U','U'), ('C','A')):2.39,
+        (('G','G'), ('C','A')):10.0,
+        (('A','A'), ('C','U')):1.53,
+        (('G','U'), ('C','C')):6.25,
+        (('C','C'), ('U','U')):2.37,
+        (('C','U'), ('U','C')):7.97,
+        (('C','C'), ('G','G')):10.0,
+        (('G','G'), ('A','U')):10.0,
+        (('C','G'), ('A','U')):0.34,
+        (('C','U'), ('A','U')):5.3,
+        (('U','A'), ('C','A')):2.47,
+        (('U','U'), ('A','U')):3.8,
+        (('G','G'), ('U','U')):10.0,
+        (('U','A'), ('C','C')):5.3,
+        (('G','G'), ('A','G')):10.0,
+        (('A','G'), ('A','U')):4.52,
+        (('A','A'), ('A','G')):2.33,
+        (('U','C'), ('U','A')):3.8,
+        (('G','U'), ('U','U')):5.27,
+        (('A','A'), ('C','A')):5.3,
+        (('U','G'), ('C','U')):3.8,
+        (('G','U'), ('G','U')):0.0,
+        (('G','A'), ('A','U')):3.57,
+        (('U','A'), ('A','U')):0.31,
+        (('U','A'), ('U','C')):3.57,
+        (('U','G'), ('A','G')):4.33,
+        (('C','G'), ('C','A')):2.55,
+        (('U','A'), ('U','A')):0.0,
+        (('G','G'), ('G','A')):10.0,
+        (('U','U'), ('C','U')):5.97,
+        (('A','C'), ('A','G')):5.14,
+        (('U','C'), ('A','A')):6.91,
+        (('A','C'), ('A','U')):2.47,
+        (('G','C'), ('A','C')):2.55,
+        (('C','C'), ('A','C')):5.91,
+        (('A','U'), ('A','U')):0.0,
+        (('C','C'), ('C','C')):0.0,
+        (('U','C'), ('A','C')):2.39,
+        (('G','A'), ('C','C')):7.97,
+        (('A','A'), ('G','C')):3.39,
+        (('U','C'), ('A','G')):6.96,
+        (('G','C'), ('G','A')):3.49,
+        (('U','U'), ('U','A')):3.63,
+        (('G','U'), ('G','G')):10.0,
+        (('C','G'), ('U','G')):2.14,
+        (('A','G'), ('U','A')):4.66,
+        (('A','A'), ('U','A')):3.57,
+        (('U','G'), ('U','A')):2.11,
+        (('C','A'), ('U','C')):5.3,
+        (('G','A'), ('C','G')):3.39,
+        (('U','A'), ('C','G')):0.21,
+        (('A','U'), ('C','U')):3.57,
+        (('G','C'), ('U','U')):3.94,
+        (('U','U'), ('C','C')):2.37,
+        (('G','U'), ('A','A')):4.1,
+        (('A','C'), ('C','U')):5.3,
+        (('A','G'), ('C','C')):9.77,
+        (('U','A'), ('G','C')):0.34,
+        (('A','U'), ('A','C')):2.47,
+        (('U','G'), ('G','A')):4.44,
+        (('G','U'), ('A','U')):2.11,
+        (('A','U'), ('A','A')):4.52,
+        (('C','U'), ('C','C')):3.02,
+        (('C','U'), ('U','A')):5.39,
+        (('A','C'), ('U','C')):4.58,
+        (('C','G'), ('G','A')):3.5,
+        (('C','A'), ('G','G')):10.0,
+        (('G','A'), ('G','G')):10.0,
+        (('C','G'), ('U','U')):3.8,
+        (('U','A'), ('A','C')):2.75,
+        (('G','A'), ('C','A')):4.58,
+        (('G','A'), ('A','C')):5.3,
+        (('A','C'), ('C','G')):2.78,
+        (('U','C'), ('G','G')):10.0,
+        (('A','A'), ('A','U')):3.5,
+        (('C','C'), ('C','U')):7.97,
+        (('A','G'), ('U','C')):2.71,
+        (('A','C'), ('A','C')):0.0,
+        (('U','A'), ('G','A')):3.67,
+        (('C','C'), ('G','U')):6.25,
+        (('A','U'), ('U','G')):2.4,
+        (('U','C'), ('C','G')):3.94,
+        (('U','C'), ('U','C')):5.97,
+        (('A','G'), ('A','A')):0.0,
+        (('A','A'), ('U','G')):4.59,
+        (('C','C'), ('A','U')):5.39,
+        (('A','G'), ('C','U')):3.77,
+        (('C','C'), ('U','G')):5.06,
+        (('G','U'), ('C','G')):2.39,
+        (('G','C'), ('A','A')):4.38,
+        (('U','C'), ('U','G')):5.27,
+        (('U','G'), ('C','A')):0.8,
+        (('A','A'), ('G','U')):3.8,
+        (('C','U'), ('U','U')):4.31,
+        (('C','C'), ('G','C')):5.56,
+        (('G','C'), ('G','U')):2.14,
+        (('U','U'), ('U','U')):0.0,
+        (('U','C'), ('G','A')):6.91,
+        (('C','U'), ('C','U')):8.25,
+        (('C','G'), ('A','C')):2.78,
+        (('G','U'), ('U','C')):3.8,
+        (('A','G'), ('C','G')):4.5,
+        (('G','G'), ('U','C')):10.0,
+        (('U','G'), ('U','C')):4.59,
+        (('C','A'), ('C','U')):4.58,
+        (('G','A'), ('U','C')):1.53,
+        (('G','G'), ('C','G')):10.0,
+        (('A','U'), ('G','U')):2.11,
+        (('G','U'), ('C','A')):4.76,
+        (('A','C'), ('U','U')):5.21,
+        (('A','G'), ('C','A')):6.7,
+        (('C','A'), ('U','A')):2.47,
+        (('A','G'), ('U','G')):6.07,
+        (('C','G'), ('U','A')):0.21,
+        (('U','G'), ('A','U')):2.4,
+        (('G','G'), ('C','C')):10.0,
+        (('C','G'), ('A','A')):4.5,
+        (('C','U'), ('C','A')):5.91,
+        (('G','U'), ('U','G')):4.48,
+        (('G','C'), ('C','A')):2.78,
+        (('A','A'), ('U','C')):0.0,
+        (('G','G'), ('G','C')):10.0,
+        (('A','U'), ('G','C')):0.21,
+        (('C','A'), ('C','G')):2.55,
+        (('U','C'), ('C','A')):5.21,
+        (('U','G'), ('U','U')):2.89,
+        (('G','G'), ('G','U')):10.0,
+        (('C','A'), ('A','G')):5.05,
+        (('A','C'), ('U','A')):2.75,
+        (('A','U'), ('C','G')):0.34,
+        (('U','G'), ('C','C')):5.06,
+        (('A','C'), ('G','C')):2.55,
+        (('G','U'), ('A','C')):0.8,
+        (('C','A'), ('C','C')):4.49,
+        (('A','U'), ('G','G')):10.0,
+        (('A','A'), ('U','U')):6.46,
+        (('G','G'), ('G','G')):0.0,
+        (('A','C'), ('G','G')):10.0,
+        (('A','C'), ('A','A')):4.8,
+        (('A','A'), ('G','G')):10.0,
+        (('G','C'), ('U','C')):3.39,
+        (('U','C'), ('G','C')):3.8,
+        (('U','A'), ('G','U')):2.4,
+        (('G','A'), ('G','C')):3.44,
+        (('G','G'), ('A','C')):10.0,
+        (('A','A'), ('A','A')):2.71,
+        (('C','C'), ('A','G')):8.82,
+        (('C','G'), ('C','C')):5.49,
+        (('U','A'), ('U','G')):2.11,
+        (('U','G'), ('A','C')):4.76,
+        (('C','U'), ('U','G')):6.25,
+        (('C','C'), ('C','G')):5.49,
+        (('G','U'), ('G','A')):4.33,
+        (('G','C'), ('C','G')):0.26,
+        (('A','G'), ('A','G')):2.41,
+        (('A','A'), ('C','C')):8.25,
+        (('A','G'), ('G','A')):2.18,
+        (('C','G'), ('G','U')):2.39,
+        (('A','C'), ('C','C')):5.91,
+        (('A','G'), ('G','G')):10.0,
+        (('U','U'), ('G','A')):6.96,
+        (('U','C'), ('C','U')):6.46,
+        (('A','U'), ('U','A')):0.31,
+        (('G','A'), ('G','A')):2.33,
+        (('G','C'), ('C','U')):3.44,
+        (('G','A'), ('U','A')):3.5,
+        (('U','G'), ('A','A')):6.07,
+        (('C','U'), ('A','G')):8.86,
+        (('U','U'), ('G','U')):5.27,
+        (('A','U'), ('A','G')):3.67,
+        (('G','C'), ('C','C')):5.56,
+        (('A','U'), ('C','C')):5.39,
+        (('U','C'), ('A','U')):3.63,
+        (('C','A'), ('G','C')):2.78,
+        (('C','G'), ('C','G')):0.0,
+        (('C','C'), ('A','A')):9.77,
+        (('G','C'), ('A','U')):0.21,
+        (('A','U'), ('G','A')):3.67,
+        (('U','U'), ('A','A')):8.18,
+        (('U','C'), ('C','C')):4.31,
+        (('C','U'), ('G','A')):8.82,
+        (('C','A'), ('U','G')):0.8,
+        (('C','U'), ('A','A')):9.05,
+        (('C','A'), ('A','A')):6.7,
+        (('C','C'), ('U','A')):5.3,
+        (('G','U'), ('C','U')):4.59,
+        (('C','A'), ('A','C')):4.93,
+        (('C','A'), ('G','U')):4.76,
+        (('G','C'), ('G','G')):10.0,
+        (('U','A'), ('G','G')):10.0,
+        (('G','A'), ('A','A')):3.77,
+        (('U','U'), ('A','G')):6.91,
+        (('C','G'), ('C','U')):3.39,
+        (('A','G'), ('A','C')):4.8,
+        (('U','U'), ('A','C')):5.21,
+        (('U','A'), ('U','U')):3.63,
+        (('G','U'), ('G','C')):2.14,
+        (('C','U'), ('A','C')):4.49,
+        (('C','A'), ('G','A')):5.14,
+        (('C','G'), ('G','G')):10.0,
+        (('C','C'), ('G','A')):8.86,
+        (('G','A'), ('G','U')):4.59,
+        (('U','A'), ('A','G')):3.67,
+        (('U','U'), ('G','G')):10.0,
+        (('U','A'), ('C','U')):3.5,
+        (('C','C'), ('C','A')):4.49,
+        (('C','U'), ('G','C')):5.49,
+        (('C','U'), ('C','G')):5.56,
+        (('A','A'), ('G','A')):2.25,
+        (('C','U'), ('G','G')):10.0,
+        (('C','A'), ('U','U')):2.39,
+        (('A','G'), ('G','U')):4.1,
+        (('G','U'), ('U','A')):2.4,
+        (('U','G'), ('G','U')):4.48,
+        (('C','A'), ('A','U')):2.75,
+        (('C','G'), ('A','G')):3.49,
+        (('G','G'), ('U','G')):10.0,
+        (('A','U'), ('U','C')):3.5}
+
+
+
+def score(node,state):
+    if (node.child_nodes() == []):
+        return node.val[state]
+    elif (len(node.child_nodes()) == 1):
+        child = (node.child_nodes())[0]
+        tmp = score(child,state)
+        node.val[state] = tmp
+        #kengdie
+        
+        
+        return tmp
+    else:
+        sumCost = 0
+        for ch in node.child_nodes():
+            minCost = float("inf")
+            for nt in ['A','C','G','U']:
+                index = state+nt if (nt>state) else nt+state
+                costMut = costMat[index]
+                if(ch.val.has_key(nt)):
+                    cost = costMut + ch.val[nt]
+                else:
+                    cost = costMut + score(ch,nt)
+                if (cost<minCost):
+                    minCost = cost
+            sumCost+=minCost
+        node.val[state] = sumCost
+        return sumCost
+    
+def bpScore(node,nt1,nt2):
+    if (node.child_nodes() == []):
+        return node.val[nt1+nt2]
+    elif (len(node.child_nodes()) == 1):
+        tmp = bpScore((node.child_nodes())[0],nt1,nt2)
+        node.val[nt1+nt2] = tmp
+        return tmp
+    else:
+        sumCost = 0
+        for ch in node.child_nodes():
+            minCost = float("inf")
+            minNt = []
+            for nt in bpAlphabet:
+                """index1 = nt1+nt[0] if(nt[0]>nt1) else nt[0]+nt1
+                index2 = nt2+nt[1] if(nt[1]>nt2) else nt[1]+nt2
+                costMut1 = costMat[index1]
+                costMut2 = costMat[index2]"""
+                if(ch.val.has_key(nt)):
+                    cost = bpCost(nt1,nt2,nt[0],nt[1]) + ch.val[nt]
+                else:
+                    cost = bpCost(nt1,nt2,nt[0],nt[1]) + bpScore(ch,nt[0],nt[1])
+                if (cost<=minCost):
+                    minCost = cost
+
+            sumCost+=minCost
+            
+        node.val[nt1+nt2] = sumCost
+        return sumCost
+    
+def fillCost(node):
+    if(node.child_nodes() == []):
+        #print node.val
+        pass
+    else:
+        """costA = score(node,'A')
+        costC = score(node,'C')
+        costG = score(node,'G')
+        costU = score(node,'U')
+        
+        costDict = {'A':costA,'U':costU,'C':costC,'G':costG}
+        node.val = costDict"""
+        score(node,'A')
+        score(node,'C')
+        score(node,'G')
+        score(node,'U')
+        
+def fillCostBP(node):
+    if(node.child_nodes() == []):
+        pass
+    else:
+        for nt in bplist:#bpAlphabet:
+            bpScore(node,nt[0],nt[1])
+        
+        
+def setnt(leaf,nt):
+    leaf.val = {}
+    for l in alphabet:
+        leaf.val[l] = 0 if (l == nt) else float("inf")
+        
+def setbpnt(leaf,nt1,nt2):
+    leaf.val = {}
+    for l in bpAlphabet:
+        leaf.val[l] = 0 if(l == nt1+nt2) else float("inf")
+
+def findMatch(struct):
+    stk = []
+    bp = {}
+    for x in range(0,len(struct)):
+        if (struct[x] == '('):
+            stk.append(x)
+        elif (struct[x] == ')'):
+            bp[stk.pop()] = x
+        else:
+            pass
+    return bp
+
+def bpCost(a,b,c,d):
+    index1 = a+c if (c>a) else c+a
+    index2 = b+d if (d>b) else d+b
+    if ((c,d) in basepair):
+        cost = (costMat[index1]+costMat[index2])/float(2)
+        return cost
+    else:
+        cost = float("inf") #costMat[index1]+costMat[index2]
+        return cost
+    
+
+    
+def fillCandidates(node,position):
+    tmplist = []
+    [tmplist.append(ndd) for ndd in node.postorder_iter()]
+    for nd in tmplist:
+        
+        l = []
+        vals = [nd.val[nu] for nu in alphabet]
+        minCost = min(vals)
+        for nt in alphabet:
+            if (nd.val[nt] == minCost):
+                l.append({position:nt})
+            else:
+                pass
+        nd.candidateList.append(l)
+    
+def fillCandidatesBP(node,pos1,pos2):
+    if (pos1 == 11):
+        jj = 1+1
+    for nd in node.postorder_iter():
+        l = []
+        vals = [nd.val[nu] for nu in bplist]#bpAlphabet]
+        minCost = min(vals)
+        for nt in bplist:#bpAlphabet:
+            if (nd.val[nt] == minCost):
+                l.append({pos1:nt[0],pos2:nt[1]})
+                nd.cmpList[(pos1,pos2)].append((nt[0],nt[1]))
+            else:
+                pass
+        nd.candidateList.append(l)
+        
+def trimBranches(root):
+    for nd in root.postorder_iter():
+        if (len(nd.child_nodes()) == 1):
+            if (nd.level() == 0):
+                child = (nd.child_nodes())[0]
+                grandChildren = [child.remove_child(ch) for ch in child.child_nodes() ]
+                nd.remove_child(child)
+                for gch in grandChildren:
+                    nd.add_child(gch)
+            else:
+                parentNode = nd.parent_node
+                child = (nd.child_nodes())[0]
+                nd.remove_child(child)
+                parentNode.remove_child(nd)
+                parentNode.add_child(child)
+        else:
+            pass
+        
+def trimLeaves(root,alignsDict,tree):
+    for nd in root.postorder_iter():
+        if(nd.is_leaf()):
+            if (nd.val == {}):
+                parentNode = nd.parent_node
+                parentNode.remove_child(nd)
+            else:
+                pass
+        else:
+            pass
+        
+def fillCandidates_allPositions(root,alignsDict,struct,tree):
+    bp = findMatch(struct)
+    notTrimmed = True
+    for nds in root.preorder_iter():
+        nds.cmpList={}
+    for s in range(0,len(struct)):
+        for nds in root.preorder_iter():
+            nds.val = {}
+        if (bp.has_key(s)):
+            for leaf in root.leaf_nodes():
+                seqName = (((leaf.get_node_str()).split())[1]).replace('#','/')
+                if(alignsDict.has_key(seqName)):
+                    setbpnt(leaf,alignsDict[seqName][s],alignsDict[seqName][bp[s]])
+                else:
+                    """parentNode = leaf.parent_node
+                    if (leaf.level() != 1):
+                        grandparent = parentNode.parent_node
+                        parentNode.remove_child(leaf)
+                        grandparent.remove_child(parentNode)
+                        grandparent.add_child(leaf)
+                    else:"""
+                    parentNode = leaf.parent_node
+                    parentNode.remove_child(leaf)
+           
+            
+            
+            if(notTrimmed):
+                trimLeaves(root,alignsDict,tree)
+                trimBranches(root)
+                #print(tree.as_ascii_plot())
+                notTrimmed = False
+            if (s ==10):
+                j = 1+1
+            #kengdie
+            for nds in root.preorder_iter():
+                nds.cmpList[s,bp[s]]=[]
+            if(s==10):
+                sss=1+1
+            fillCostBP(root)
+            fillCandidatesBP(root,s,bp[s])
+            
+        elif (s not in bp.values()):
+            numLeaf = len(root.leaf_nodes())
+            for leaf in root.leaf_nodes():
+                seqName = (((leaf.get_node_str()).split())[1]).replace('#','/')
+                if(alignsDict.has_key(seqName)):
+                    setnt(leaf,alignsDict[seqName][s])
+                else:
+                    parentNode = leaf.parent_node
+                    parentNode.remove_child(leaf)
+            
+            
+            #print(tree.as_ascii_plot())
+            if(notTrimmed):
+                trimLeaves(root,alignsDict,tree)
+                trimBranches(root)
+                #print(tree.as_ascii_plot())
+                notTrimmed = False
+            #print(tree.as_ascii_plot())
+            for nds in root.postorder_internal_node_iter():
+                nds.val = {}
+            fillCost(root)
+            fillCandidates(root,s)
+        else:
+            pass
+            
+            
+"""def pinDown_fillCandidates(node,position):
+    if(node.level() == 0):
+        node.pinDown_candidateList = list(node.candidateList)
+        for ch in node.child_nodes():
+            pinDown_fillCandidates(ch,position)
+    elif (node.is_leaf()):
+        node.pinDown_candidateList = list(node.candidateList)
+    else:
+        parent = node.parent_node"""
+        
+        
+def classical_fillCandidates_allPositions(root,alignsDict,struct,tree):
+    notTrimmed = True
+    for s in range(0,len(struct)):
+       
+        for nds in root.preorder_iter():
+            nds.val = {}
+        for leaf in root.leaf_nodes():
+            seqName = (((leaf.get_node_str()).split())[1]).replace('#','/')
+            if(alignsDict.has_key(seqName)):
+                setnt(leaf,alignsDict[seqName][s])
+            else:
+                parentNode = leaf.parent_node
+                parentNode.remove_child(leaf)
+        if(notTrimmed):
+            trimLeaves(root,alignsDict,tree)
+            trimBranches(root)
+            notTrimmed = False
+            #print(tree.as_ascii_plot())
+        if(s==10):
+            sss=1+1
+        
+        fillCost(root)
+        fillCandidates(root,s)
+    
+    bp = findMatch(struct)    
+    for nds in root.preorder_iter():
+        nds.cmpList={}
+        for pos1,pos2 in bp.iteritems():
+            fir = nds.candidateList[pos1]
+            sec = nds.candidateList[pos2]
+            firNts = [dic[pos1] for dic in fir]
+            secNts = [dic[pos2] for dic in sec]
+            comb = list(itertools.product(*([firNts,secNts])))
+            nds.cmpList[(pos1,pos2)]=comb
+
+
+def similarity(seqDict):
+    rlen = len(seqDict)
+    li = list(seqDict.itervalues())
+    clen = len(li[0])
+    diff = 0
+    for i in range(clen):
+        for j in range(rlen-1):
+            for k in range(j+1,rlen):
+                if(li[j][i]!=li[k][i]):
+                    diff +=1
+
+    sim = 1-diff/(float)((((rlen-1)*rlen)/2)*clen)
+    return sim
+
+
+def similarityBP(seqDict,struct):
+    bp = findMatch(struct)
+    rlen = len(seqDict)
+    li = list(seqDict.itervalues())
+    clen = len(bp)*2
+    maxdiff_positions =[]
+    tmpdiff = 0
+    maxdiff =0
+    diff = 0
+    for l,r in bp.iteritems():
+        for j in range(rlen-1):
+            for k in range(j+1,rlen):
+                if(li[j][l]!=li[k][l]):
+                    diff+=1
+                    tmpdiff+=1
+                if(li[j][r]!=li[j][r]):
+                    diff+=1
+                    tmpdiff+=1
+        if(tmpdiff>=maxdiff):
+            if(tmpdiff>maxdiff):
+                maxdiff = tmpdiff
+                maxdiff_positions = [(l,r)]
+            else:
+                maxdiff_positions.append((l,r))
+        tmpdiff = 0
+    sim = 1 - diff/(float)((((rlen-1)*rlen)/2)*clen)
+    sim_difpos = 1- maxdiff/(float)((rlen-1)*rlen) if rlen!=1 else 1
+    return [sim,maxdiff_positions,sim_difpos]
+
+
+
+def pinDown(node,state,position):
+    
+    score(node,state)
+    for ch in node.child_nodes():
+        if ch.is_leaf():
+            continue
+        minCost = float("inf")
+        minNts = []
+        for nt in ['A','C','G','U']:
+            index = state+nt if (nt>state) else nt+state
+            costMut = costMat[index]
+            cost = costMut + ch.val[nt]
+            if (cost<=minCost):
+                if (cost<minCost):
+                    minNts = [{position:nt}]
+                else:
+                    minNts.append({position:nt})
+                minCost = cost
+        ch.pinDown_candidateList.append(minNts)
+        
+        
+def pinDown_beta(node,state,position):
+    
+    score(node,state)
+    for ch in node.child_nodes():
+        minCost = float("inf")
+        minNts = {}
+        minNts[position]=[]
+        for nt in ['A','C','G','U']:
+            index = state+nt if (nt>state) else nt+state
+            costMut = costMat[index]
+            cost = costMut + ch.val[nt]
+            if (cost<=minCost):
+                if (cost<minCost):
+                    minNts[position]=[nt]
+                else:
+                    minNts[position].append(nt)
+                minCost = cost
+        ch.pinDown_candidateList[0][position] = minNts[position]
+            
+def pinDownBP(node,state1,state2,position1,position2):
+    bpScore(node,state1,state2)
+
+    for ch in node.child_nodes():
+        if ch.is_leaf():
+            continue
+        minCost = float("inf")
+        minNts = []
+        for nt in bpAlphabet:
+            cost = bpCost(state1,state2,nt[0],nt[1]) + ch.val[nt]
+            if (cost<=minCost):
+                if (cost<minCost):
+                    minNts = [{position1:nt[0],position2:nt[1]}]
+                else:
+                    minNts.append({position1:nt[0],position2:nt[1]})
+                minCost = cost
+        ch.pinDown_candidateList.append(minNts)
+        
+def pinDownBP_beta(node,state1,state2):
+    bpScore(node,state1,state2)
+
+    for ch in node.child_nodes():
+        ch.pinDown_candidateList=[]
+        minCost = float("inf")
+        minNts = []
+        for nt in bpAlphabet:
+            cost = bpCost(state1,state2,nt[0],nt[1]) + ch.val[nt]
+            if (cost<=minCost):
+                if (cost<minCost):
+                    minNts = [(nt[0],nt[1])]
+                else:
+                    minNts.append((nt[0],nt[1]))
+                minCost = cost
+        ch.pinDown_candidateList = minNts  #.append(minNts)
+            
+def pinDownSeq(root,seq,struct,alignsDict,isClassical):
+    if(isClassical):
+        bp = {}
+    else:
+        bp = findMatch(struct)
+    for s in range(0,len(seq)):
+        for nds in root.preorder_iter():
+            nds.val = {}
+        #6/4
+        if (s == 12):
+            jjj = 1+1
+        
+        if (bp.has_key(s)):
+            for leaf in root.leaf_nodes():
+                seqName = (((leaf.get_node_str()).split())[1]).replace('#','/')
+                if(alignsDict.has_key(seqName)):
+                    setbpnt(leaf,alignsDict[seqName][s],alignsDict[seqName][bp[s]])
+                else:
+                    pass
+            pinDownBP(root,seq[s],seq[bp[s]],s,bp[s])
+        elif (s not in bp.values()):
+            for leaf in root.leaf_nodes():
+                seqName = (((leaf.get_node_str()).split())[1]).replace('#','/')
+                if(alignsDict.has_key(seqName)):
+                    setnt(leaf,alignsDict[seqName][s])
+                else:
+                    pass
+            pinDown(root,seq[s],s)
+        else:
+            pass
+    """"i = 0
+    for ch in root.child_nodes():
+        print "child number :" +str(i)
+        tmp = list(ch.pinDown_candidateList)
+        seqList = list(itertools.product(*tmp))
+        decendants = []
+        for c in seqList:
+            decendant = [None]*len(seq)
+            for dic in c:
+                for key in dic:
+                    decendant[key] = dic[key]
+            #print ">level :" + str(nodes.level())
+            #print "".join(decendant)
+            decendants.append("".join(decendant))
+        print decendants
+        i += 1"""
+        
+"""def pinDownSeq_helper(node,struct,alignsDict):
+    tmp = list(node.candidateList)
+    seqList = list(itertools.product(*tmp))
+    ancestors=[]
+    for c in seqList:
+        ancestor = [None]*len(struct)
+        for dic in c:
+            for key in dic:
+                ancestor[key] = dic[key]
+            #print ">level :" + str(nodes.level())
+            #print "".join(ancestor)
+        ancestors.append("".join(ancestor))
+    print ">" +str(node.level())
+    print ancestors[0]
+    pinDownSeq(node,ancestors[0],struct,alignsDict)
+    
+    
+def pinDownSeq_helper_beta(node,struct,alignsDict):
+    tmp = list(node.pinDown_candidateList)
+    seqList = list(itertools.product(*tmp))
+    ancestors=[]
+    for c in seqList:
+        ancestor = [None]*len(struct)
+        for dic in c:
+            for key in dic:
+                ancestor[key] = dic[key]
+            #print ">level :" + str(nodes.level())
+            #print "".join(ancestor)
+        ancestors.append("".join(ancestor))
+    print ">" +str(node.level())
+    print ancestors[0]
+    pinDownSeq(node,ancestors[0],struct,alignsDict)
+"""
+        
+def parent_firstChildren(node,struct,alignsDict):
+    tmplist=[node.cmpList[key] for key in sorted(node.cmpList)]
+    bpList = list(itertools.product(*(tmplist)))
+    
+    sum =0
+    for bps in bpList:
+        sum += diffCh(node,bps,struct,alignsDict)
+    return sum/(float)(len(bpList))
+    
+    
+    """for c in bpList:
+            ancestor = [None]*len(struct)
+            for dic in c:
+                for key in dic:
+                    ancestor[key] = dic[key]
+            print ">parent:" + "".join(ancestor)
+            pinDownSeq(node,"".join(ancestor),struct,alignsDict)"""
+            
+            
+def classical_pfcdiff(node,struct,alignsDict):
+    tmplist=[node.cmpList[key] for key in sorted(node.cmpList)]
+    bpList = list(itertools.product(*(tmplist)))
+    
+    sum =0
+    for bps in bpList:
+        sum += classical_diffCh(node,bps,struct,alignsDict)
+    return sum/(float)(len(bpList))
+            
+def classical_parent_firstChildren(node,struct,alignsDict):
+    seqList = list(itertools.product(*(node.candidateList)))
+    noStruct = ["."]*len(struct)
+    noStruct = "".join(noStruct)
+    for c in seqList:
+            ancestor = [None]*len(struct)
+            for dic in c:
+                for key in dic:
+                    ancestor[key] = dic[key]
+            print ">parent:" + "".join(ancestor)
+            pinDownSeq(node,"".join(ancestor),noStruct,alignsDict,True)
+            
+            
+def diffCh(parent,bps,struct,alignsDict):
+    """bps in the form ((A,U),(G,C))"""
+    sumdiff = 0
+    bpsites = findMatch(struct)
+    tmplist = [(key,bpsites[key]) for key in sorted(bpsites)]
+    i = 0
+    for bp in bps:
+        for nds in parent.postorder_iter():
+            nds.val = {}
+        for leaf in parent.leaf_nodes():
+                seqName = (((leaf.get_node_str()).split())[1]).replace('#','/')
+                if(alignsDict.has_key(seqName)):
+                    setbpnt(leaf,alignsDict[seqName][tmplist[i][0]],alignsDict[seqName][tmplist[i][1]])
+                else:
+                    pass
+        pinDownBP_beta(parent,bp[0],bp[1])
+        liofli=[]
+        numOfch = len(parent.child_nodes())
+        if numOfch <= 1:
+            return 0
+        for ch in parent.child_nodes():
+            liofli.append(ch.pinDown_candidateList)
+        comblist = list(itertools.product(*(liofli)))
+        sumdiff += minDist(comblist)
+        i+=1
+    return sumdiff/(float)(numOfch*len(bps)*(numOfch-1)/2)
+
+
+def classical_diffCh(parent,bps,struct,alignsDict):
+    sumdiff = 0
+    bpsites = findMatch(struct)
+    tmplist = [(key,bpsites[key]) for key in sorted(bpsites)]
+    i = 0
+    for bp in bps:
+        for nds in parent.child_nodes():
+            nds.pinDown_candidateList=[{}]
+        for nds in parent.postorder_iter():
+            nds.val = {}
+        for leaf in parent.leaf_nodes():
+                seqName = (((leaf.get_node_str()).split())[1]).replace('#','/')
+                if(alignsDict.has_key(seqName)):
+                    setnt(leaf,alignsDict[seqName][tmplist[i][0]])
+                else:
+                    pass
+        pinDown_beta(parent,bp[0],tmplist[i][0])
+        
+        for nds in parent.postorder_iter():
+            nds.val = {}
+        for leaf in parent.leaf_nodes():
+                seqName = (((leaf.get_node_str()).split())[1]).replace('#','/')
+                if(alignsDict.has_key(seqName)):
+                    setnt(leaf,alignsDict[seqName][tmplist[i][1]])
+                else:
+                    pass
+        pinDown_beta(parent,bp[1],tmplist[i][1])
+        
+        numOfch = len(parent.child_nodes())
+        if numOfch <= 1:
+            return 0
+        liofli=[]
+        for ch in parent.child_nodes():
+            premerge = [ch.pinDown_candidateList[0][tmplist[i][0]],ch.pinDown_candidateList[0][tmplist[i][1]]]
+            merged = list(itertools.product(*(premerge)))
+            liofli.append(merged)
+        comblist = list(itertools.product(*(liofli)))
+        sumdiff += minDist(comblist)
+        i+=1
+    return sumdiff/(float)(numOfch*len(bps)*(numOfch-1)/2)
+            
+            
+
+def minDist(comblist):
+    mindist = float('inf')
+    for comb in comblist:
+        totdist = 0
+        for i in range(len(comb)-1):
+            for j in range(i+1,len(comb)):
+                key = (comb[i],comb[j])
+                dist = ISO[key]
+                totdist += dist
+        if totdist<mindist:
+            mindist = totdist
+    return mindist
+
+
+
+def propagatedown(node,struct,alignsDict,isClassical):
+    if(node.level()==0):
+        tmp = list(node.candidateList)
+    elif (node.is_leaf()):
+        seqName = (((node.get_node_str()).split())[1]).replace('#','/')
+        print ">" +str(node.level())
+        print alignsDict[seqName]
+        print struct
+        return
+    else:
+        tmp = list(node.pinDown_candidateList)
+    seqList = list(itertools.product(*tmp))
+    ancestors=[]
+    for c in seqList:
+        ancestor = [None]*len(struct)
+        for dic in c:
+            for key in dic:
+                ancestor[key] = dic[key]
+            #print ">level :" + str(nodes.level())
+            #print "".join(ancestor)
+        ancestors.append("".join(ancestor))
+    
+    for seq in ancestors:
+        for ch in node.child_nodes():
+            ch.pinDown_candidateList=[]
+        print ">" +str(node.level())
+        print seq
+        print struct
+        pinDownSeq(node,seq,struct,alignsDict,isClassical)
+        for ch in node.child_nodes():
+            propagatedown(ch,struct,alignsDict,isClassical)
+            
+
+    
+###############################################################################
+
+# count different loop types
+
+def usage(softname):
+    print "%s <arguments>" % softname
+    print "-c   Minimum number of clusters"
+    print "-C   Maximum number of clusters"
+    print "-f   Input file (Required)"
+    print "-h   This message"
+    print "-m   Minimum MSA size (columns)"
+    print "-M   Maximum MSA size (columns)"
+    print "-o   Print data in output files (One per cluster of family)"
+    print "-s   Maximum number of RNA families (select families randomly if number exceed threshold)"
+    print "-S   Maximum number of sequences in RNA families (select sequences randomly if number exceed threshold)"
+    print "-x   Select Rfam family (use Rfam ID)"
+    sys.exit(1)
+
+###############################################################################
+
+# count different loop types
+
+def ssastats(structure):
+    
+    stack=[];
+    prev_openk  = -1;
+    prev_closek = -1;
+    sse_counter = {'hairpin':0, 'stack':0, 'bulge':0, 'internal': 0, 'loop': {}, 'bp':0};
+    stemstack = []
+    
+    lindex = range(len(structure));
+    for k in lindex:
+        carac = structure[k];
+        if carac=='(':
+
+            sse_counter['bp']+=1
+            stack.append(k);
+            if len(stemstack)>0 and prev_closek>=0:
+                stemstack[-1]+=1
+            stemstack.append(0)
+            prev_openk  = -1;
+            prev_closek = -1;
+        
+        elif carac==')':
+            closek=k;
+            openk=stack.pop()
+            nstem = stemstack.pop()
+            
+            if prev_openk<0 and prev_closek<0:
+                sse_counter['hairpin']+=1
+            else:
+                leftgap  = prev_openk-openk-1
+                rightgap = closek-prev_closek-1
+                
+                if leftgap==0 and rightgap==0:
+                    sse_counter['stack']+=1
+                else:
+                    if nstem==0:
+                        if leftgap==0 or rightgap==0:
+                            sse_counter['bulge']+=1
+                        else:
+                            sse_counter['internal']+=1
+                    if not sse_counter['loop'].has_key(nstem):
+                        sse_counter['loop'][nstem]=0
+                    sse_counter['loop'][nstem]+=1
+            prev_openk = openk
+            prev_closek = closek
+
+    return sse_counter
+
+
+###############################################################################
+
+def fitstruct2seq(seq,struct,removeNonWC=True):
+    
+    wcbp = {('G','C'),('C','G'),('A','U'),('U','A'),('G','U'),('U','G')}
+    nonwcbp = 0
+    
+    if len(seq)!=len(struct):
+        print "sequence and structure lengths do not match";
+        sys.exit(1);
+    
+    # build bpdic consistent with seq
+    bpdic={}
+    stack=[]
+    for k in range(len(struct)):
+        carac=struct[k]
+        if carac=='(':
+            stack.append(k)
+        elif carac==')':
+            closei=stack.pop();
+            openi=k
+            if not (seq[openi],seq[closei]) in wcbp:
+                nonwcbp += 1
+            if seq[openi]!='.' and seq[closei]!='.':
+                bpdic[openi]=closei
+                bpdic[closei]=openi
+    # build structure
+    newseq=''
+    newstruct=''
+    for k in range(len(seq)):
+        nt=seq[k]
+        if nt!='.':
+            newseq+=nt
+            if bpdic.has_key(k):
+                if bpdic[k]>k:
+                    newstruct+='('
+                else:
+                    newstruct+=')'
+            else:
+                newstruct+='.'
+    
+    return newseq,newstruct,nonwcbp
+
+##########################################################################################
+
+def hashcode(sequenceWithGaps):
+    scode=''
+    for i in range(len(sequenceWithGaps)):
+        if sequenceWithGaps[i]=='.':
+            scode += '1'
+        else:
+            scode += '0'
+    return scode
+
+def clusterUnGapped(data):
+    clusters={}
+    entrymap = {}
+    for myid,myseq in data['seqs'].iteritems():
+        mycode = hashcode(myseq)
+        if not entrymap.has_key(mycode):
+            mykey = len(entrymap)
+            entrymap[mycode] = mykey
+            clusters[mykey] = {}
+        else:
+            mykey = entrymap[mycode]
+        clusters[mykey][myid]=myseq
+    return clusters
+
+##########################################################################################
+
+def readRfamDB(filename):
+    
+    seqline_re = re.compile("(\S+)(\s+)(\S+)");
+    
+    fh = open(filename,"r")
+
+    info={};
+    id=''
+    
+    for myrow in fh:
+        cline = myrow.strip()
+        if len(cline)>0:
+            if cline[0]=='#':
+                if cline.startswith("#=GC SS_cons"):
+                    if not info[id].has_key('consensus'):
+                        info[id]['consensus']='';
+                    info[id]['consensus'] += cline[13:].lstrip().replace('<','(').replace('>',')')
+                if cline.startswith("#=GF AC"):
+                    id = cline[8:].replace(' ','');
+                    info[id]={};
+                    info[id]['seqs']={}
+                if cline.startswith("#=GF ID"):
+                    info[id]['name']=cline[8:].replace(' ','');
+                if cline.startswith("#=GF SQ"):
+                    info[id]['nseq']=int(cline[8:].replace(' ',''));
+            elif cline.startswith("//"):
+                if not info[id].has_key('name'):
+                    print "WARNING: %s missing name." % (id);
+                if not info[id].has_key('nseq'):
+                    print "WARNING: %s missing number of sequences." % (id);
+                if not info[id].has_key('consensus') or len(info[id]['consensus'])==0:
+                    print "WARNING: %s missing consensus structure" % (id);
+            else:
+                # store sequences
+                fields = seqline_re.match(cline);
+                if fields:
+                    seqid = fields.group(1);
+                    seqcontent = fields.group(3);
+                else:
+                    print "Cannot parse \"%s\"" % cline;
+                    sys.exit(1);
+                if not info[id]['seqs'].has_key(seqid):
+                    info[id]['seqs'][seqid] = '';
+                info[id]['seqs'][seqid] += seqcontent;
+
+    fh.close()
+                    
+    return info
+
+##########################################################################################
+
+def select(ssa,params):
+
+    if len(ssa)<params['min'] or len(ssa)>params['max']:
+        return False
+
+    if ssa.count('a') or ssa.count('A'):
+        return False
+
+    return True
+
+
+##########################################################################################
+
+def cleancluster(data,consensus):
+    normalizeddata = {}
+    for myclusterid,myclusterdata in data.iteritems():
+        for seqid,seqdata in myclusterdata.iteritems():
+            cleanseq,cleanssa,nonwcbp = fitstruct2seq(seqdata,consensus)
+            #kengdie
+            #nonwcbp = 0
+            mystats = ssastats(cleanssa)
+            bpthreshold = len(cleanssa)/5
+            # insert sequence with only WC base pairs & at least 20% of base pairs
+            if nonwcbp == 0 and mystats['bp']>bpthreshold:
+                if not normalizeddata.has_key(myclusterid):
+                    normalizeddata[myclusterid] = {}
+                    normalizeddata[myclusterid]['sequence'] = {}
+                normalizeddata[myclusterid]['sequence'][seqid] = cleanseq
+                if not normalizeddata[myclusterid].has_key('consensus'):
+                    normalizeddata[myclusterid]['consensus'] = cleanssa
+    return normalizeddata
+
+
+##########################################################################################
+
+def writedataset(data,params):
+    
+    outfile = data['id'] + '.fasta'
+    fh = open(outfile,'w')
+    clusteridx = data['largestcluster']
+    
+    if params['famsize'] > 0 and params['famsize'] < len(data['cluster'][clusteridx]['sequence']):
+        idlist = random.sample(list(data['cluster'][clusteridx]['sequence'].keys()),params['famsize'])
+    else:
+        idlist = list(data['cluster'][clusteridx]['sequence'].keys())
+    
+    for seqid in idlist:
+        seqdata = data['cluster'][clusteridx]['sequence'][seqid]
+        fh.write('>'+seqid+'\n')
+        fh.write(seqdata+'\n')
+
+    fh.write('>consensus structure\n')
+    fh.write(data['cluster'][clusteridx]['consensus']+'\n')
+    
+    print "%s\t%d/%d" % (data['id'],len(idlist),len(data['cluster'][clusteridx]['sequence']))
+                      
+    fh.close()
+
+##########################################################################################
+
+def main(params):
+
+    fulldb = readRfamDB(params['infile'])
+        
+    filterdb = {}
+    catalog = {}
+    for famid,data in fulldb.iteritems():
+        if select(data['consensus'],params):
+            # cluster ungapped alignments
+            ungappedclusterdata = clusterUnGapped(data)
+            # remove sequences with non-canonical bp
+            clusterdata = cleancluster(ungappedclusterdata,data['consensus'])
+            # find largest cluster
+            largestcluster = (-1,-1)
+            for clusterid,clusterset in clusterdata.iteritems():
+                if len(clusterset['sequence'])>largestcluster[1]:
+                    largestcluster = (clusterid,len(clusterset['sequence']))
+            #print famid,largestcluster
+            # select cluster based on size
+            if largestcluster[1] >= params['minclustersize'] and largestcluster[1] <= params['maxclustersize']:
+                filterdb[famid] = deepcopy(data)
+                filterdb[famid]['id'] = famid
+                filterdb[famid]['cluster'] = clusterdata
+                filterdb[famid]['largestcluster'] = largestcluster[0]
+                mystats = ssastats(filterdb[famid]['cluster'][largestcluster[0]]['consensus'])
+                # sort family in according to structure features (i.e. multi-loop)
+                maxloopidx=0
+                if len(mystats['loop'])>0:
+                    for size,count in mystats['loop'].iteritems():
+                        if size>maxloopidx:
+                            maxloopidx = size
+                if not catalog.has_key(maxloopidx):
+                    catalog[maxloopidx]=[]
+                catalog[maxloopidx].append(famid)
+
+    for famidx,famlist in catalog.iteritems():
+        # no family selected
+        if params['id']=='':
+            if len(famlist)>params['select']:
+                fam2write = random.sample(famlist,params['select'])
+            else:
+                fam2write = famlist
+            print '* Category %d: %d/%d' % (famidx,len(fam2write),len(famlist))
+            for myfam in fam2write:
+                if params['output']:
+                    writedataset(filterdb[myfam],params)
+                else:
+                    print myfam
+        else:
+            if(params['id'] == 'RF01749'):
+                    HAYY= 1+1;
+            if params['output']:
+                if params['id'] in famlist:
+                    writedataset(filterdb[params['id']],params)
+                else:
+                    print >>sys.stderr,"Cannot find family %s" % (params['id'])
+            else:
+                if params['id'] in famlist:
+                    data = filterdb[params['id']]
+                else:
+                    continue
+                mydict = {}
+                myoridict = {}
+                clusteridx = data['largestcluster']
+                idlist = list(data['cluster'][clusteridx]['sequence'].keys())
+                for seqid in idlist:
+                    seqdata = data['cluster'][clusteridx]['sequence'][seqid]
+                    mydict[seqid] = seqdata
+                    myoridict[seqid] = seqdata
+                    #kengdie
+                    parts = seqid.split('/')
+                    parts2 = parts[1].split('-')
+                    seqid2 = parts[0] + '/' + parts2[1] + '-' + parts2[0]
+                    mydict[seqid2] = seqdata
+                    
+                superlist = []
+                superlist.append(params['id'])
+                superlist.append(mydict)
+                superlist.append(data['cluster'][clusteridx]['consensus'])
+                superlist.append(myoridict)
+                return superlist
+
+##########################################################################################
+
+if __name__ == '__main__':
+    
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hf:om:M:c:C:s:S:x:", ["help", "file=", "out", "min=","max=","minC","maxC","select","famsize","id="]);
+    except getopt.GetoptError:
+        usage(sys.argv[0]);
+        
+        
+    params = {'infile':'C:\Users\zy\workspace\TestProject\rfam\Rfam.seed','output':False,'min':0,'max':1000000,'pk':False,'minclustersize':0,'maxclustersize':1000000,'select':1000000,'famsize':0,'id':''}
+        
+    argStart=len(sys.argv);
+    for o,a in opts:
+        if o in ("-h", "--help"):
+            usage(sys.argv[0]);
+        if o in ("-f", "--file"):
+            params['infile'] = a;
+            argStart-=2;
+        if o in ("-o", "--out"):
+            params['output'] = True;
+            argStart-=1;
+        if o in ("-m", "--min"):
+            params['min'] = int(a)
+            argStart-=2;
+        if o in ("-M", "--max"):
+            params['max'] = int(a)
+            argStart-=2;
+        if o in ("-c", "--minC"):
+            params['minclustersize'] = int(a)
+            argStart-=2;
+        if o in ("-C", "--maxC"):
+            params['maxclustersize'] = int(a)
+            argStart-=2;
+        if o in ("-s", "--select"):
+            params['select'] = int(a)
+            argStart-=2;
+        if o in ("-S", "--famsize"):
+            params['famsize'] = int(a)
+            argStart-=2;
+        if o in ("-x", "--id"):
+            params['id'] = a
+            argStart-=2;
+
+    famseq = main(params);
+    #print famseq
+    famid = famseq[0]
+    thedict = famseq[1]
+    structure = famseq[2]
+    
+    originalDict = famseq[3]
+    print  famid
+    #print "overall sequence similarity:" +str(similarity(originalDict))
+    simBP = similarityBP(originalDict,structure)
+    #print "overall BP similarity:" +str(simBP[0])
+    #print "least similar BP positions:" + str(simBP[1])
+    #print "similarity at the least similar sites:" +str(simBP[2])
+    """print "allignment:"
+    for key,value in originalDict.iteritems():
+        print value +" :" +key"""
+    #print structure
+    treefile = "C:\\Users\\zy\\workspace\\rfamPro\\rfam1\\trees\\" + famid + ".seed_tree"
+    treefileString = (open(treefile).read()).replace('/','#')
+    treefileString = treefileString.replace('\'','')
+    treefileString = treefileString.replace('=','')
+    tree = dendropy.Tree.get_from_string(treefileString, schema="newick")
+    root = tree.seed_node
+    classical_fillCandidates_allPositions(root,thedict,structure,tree)
+    ancestors1 = []
+    for nodes in root.level_order_iter():
+        """print ">calssical :" + str(nodes.level())
+        tmp = list(nodes.candidateList)
+        seqList = list(itertools.product(*tmp))
+        
+        for c in seqList:
+            ancestor = [None]*len(structure)
+            for dic in c:
+                for key in dic:
+                    ancestor[key] = dic[key]
+            #print ">level :" + str(nodes.level())
+            #print "".join(ancestor)
+            ancestors1.append("".join(ancestor))
+        print ancestors1
+        break"""
+    
+    tree = dendropy.Tree.get_from_string(treefileString, schema="newick")
+    root2 = tree.seed_node
+    for nds in root2.postorder_iter():
+        nds.candidateList=[]
+    fillCandidates_allPositions(root2,thedict,structure,tree)
+    #aa = parent_firstChildren(root2,structure,thedict)
+    #bb = classical_pfcdiff(root,structure,thedict)
+    
+    #propagatedown(root2,structure,thedict,False)
+    propagatedown(root,structure,thedict,True)
+    
+    
+    
+    """pinDownSeq_helper(root2,structure,thedict)
+    for nds in root2.child_nodes():
+        for dec in nds.level_order_iter():
+            if not dec.is_leaf():
+                pinDownSeq_helper_beta(dec,structure,thedict)
+            else:
+                seqName = (((dec.get_node_str()).split())[1]).replace('#','/')
+                print ">" +str(dec.level())
+                print thedict[seqName]
+    
+    
+    
+    #print "phylogeny tree"
+    #print(tree.as_ascii_plot())
+    
+    allBP = findMatch(structure)
+    allsame = True
+    for pos1,pos2 in allBP.iteritems():
+        set1 = set(root.cmpList[(pos1,pos2)])
+        set2 = set(root2.cmpList[(pos1,pos2)])
+        boo = not (set1.issubset(set2) and set2.issubset(set1))
+        boo2 = len(set1.difference(set2))!=0 and len(set2.difference(set1))!=0
+        if (boo):
+            print "different at position(s):" +str((pos1,pos2))
+            print "without structure:" +str(set1)
+            print "with structure:" +str(set2)
+            if boo2:
+                print "realdif"
+                print "different at position(s):" +str((pos1,pos2))
+                print "without structure:" +str(set1)
+                print "with structure:" +str(set2)
+            
+            allsame = False
+    if (allsame):
+        print "two variants of sankoff yields same set of ancestor sequences"
+        
+    
+        
+   print " "
+    print " "
+    print "with structure:"
+    parent_firstChildren(root2,structure,thedict)
+    print " "
+    print " "
+    print "without structure:"
+    classical_parent_firstChildren(root,structure,thedict)
+    
+    print ">cons :"
+    tmp = list(root.candidateList)
+    seqList = list(itertools.product(*tmp))
+    ancestors2 = []
+    for c in seqList:
+        ancestor = [None]*len(structure)
+        for dic in c:
+            for key in dic:
+                ancestor[key] = dic[key]
+        ancestors2.append("".join(ancestor))
+    print ancestors2
+    
+    for i in range(len(ancestors1)):
+        if (len(ancestors1)!=len(ancestors2)):
+            print "size diff"
+            break
+        ct = ancestors2.count(ancestors1[i])
+        if ( ct == 0):
+            print "not have"
+    print "over"
+    """
+
+
+
+
