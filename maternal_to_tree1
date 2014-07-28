@@ -1,0 +1,90 @@
+from rfam1 import nodedef
+rt = 810
+f1 = 0
+f2 = 1
+finish = False
+d1 = {}
+d2 = {}
+d3 = {}
+root = None
+trans_old = {}
+trans_new = {}
+prefix = "E:\\M1\\PROJ\\reactor\\hai_rna\\Hai_p1_s2\\pop_n0_"
+postfix = ".ma"
+s1 = open(prefix+str(f1)+postfix,"r")
+lines = s1.readlines();
+s1.close();
+for l in lines:
+    if ">" in l:
+        k = l.split()
+        if k[14] == str(rt):
+            d1[str(rt)] = nodedef.treenode(k[14],k[2])
+            root = d1[str(rt)]
+        else:
+            continue
+        
+s2 = open(prefix+str(f2)+postfix,"r")
+lines = s2.readlines()
+s2.close();
+for l in lines:
+    if ">" in l:
+        k = l.split()
+        if k[16] == str(rt):
+            if d3.has_key(k[2]):
+                trans_old[k[14]] = d3[k[2]]
+            else:
+                d3[k[2]]=k[14]
+                if(k[2]==(d1[k[12]]).seq):
+                    d2[k[14]] = d1[k[12]]
+                else:
+                    tmp = nodedef.treenode(k[14],k[2])
+                    d1[k[12]].add_child(tmp)
+                    d2[k[14]] = tmp
+        else:
+            continue
+
+while (not finish):
+    d1 = d2
+    d2 = {}
+    if len(d1)>0:
+        for node in d1.itervalues():
+            node.distinctChildren = {}
+    f2+=1
+    s2 = open(prefix+str(f2)+postfix,"r")
+    lines = s2.readlines()
+    s2.close()
+    for l in lines:
+        if ">" in l:
+            k = l.split()
+            if k[16] == str(rt):
+                if d1.has_key(k[12]):
+                    parent = d1[k[12]]
+                else:
+                    parent = d1[trans_old[k[12]]]
+                distinct = parent.distinctChildren
+                if distinct.has_key(k[2]):
+                    trans_new[k[14]] = distinct[k[2]]
+                else:
+                    distinct[k[2]] = k[14]
+                    if(k[2]== parent.seq):
+                        d2[k[14]] = parent
+                    else:
+                        tmp = nodedef.treenode(k[14],k[2])
+                        parent.add_child(tmp)
+                        d2[k[14]] = tmp
+            else:
+                continue
+        else:
+            continue
+    if f2 == 749:
+        finish = True
+        break
+    trans_old = trans_new
+    trans_new ={}
+
+haha = 1+1
+    
+                    
+                
+                
+                
